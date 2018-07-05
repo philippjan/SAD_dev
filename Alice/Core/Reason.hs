@@ -185,7 +185,7 @@ rapid f = isTop $ reduce f
 reduce :: Formula -> Formula
 reduce t@Trm{trName = "="} = t -- leave equality untouched
 reduce l | isLtrl l = fromMaybe l $ msum $ map (lookFor l) (trArgs $ predSymb l)
-reduce f = bool $ mapF reduce f -- round through the formula
+reduce f = bool $ mapF reduce $ bool f -- round through the formula
 
 
 {-lookFor the right evidence-}
@@ -204,6 +204,8 @@ lookFor l trm = let tId = trId (predSymb l); negl = albet $ Not l
 -- unfolding of definitions
 
 data UF = UF {dfs :: Definitions, evs :: DT.DisTree Eval, ufl :: Bool, ufs :: Bool}
+
+-- the booleans are user parameters that control what is unfolded
 
 unfold :: VM [Context]
 unfold = do  ths <- thesis; cnt <- context
@@ -238,7 +240,7 @@ fc -> formula context, sg -> signum
 
 unfoldC :: Context -> ReaderT UF (W.Writer (Sum Int)) Context
 unfoldC cx | decl cx = return cx
-           | otherwise = liftM (setForm cx) $ fill [] (Just True) 0 $ cnForm cx                -- unfold conservatively
+           | otherwise = liftM (setForm cx) $ fill [] (Just True) 0 $ cnForm cx               -- unfold conservatively
   where
     fill fc sg n f | hasDMK f  = return f                                 -- if nothing is to be unfolded, leave f be
                    | isTrm f  = liftM reduce $ unfoldA (fromJust sg) f  -- else if f is also a Term then unfold its definition
