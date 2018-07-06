@@ -112,8 +112,7 @@ findDef trm@Trm{trArgs = ts} = -- for ontological check
      sb  <- match (dfTerm def) trm
      let ngs = map (infoSub sb) $ dfGrds def  -- instantiate definition guards
          nev = map sb $ dfEvid def -- definitional evidence
-         nt  = if isNtn trm then trm {trArgs = add nev (head ts) : tail ts}
-                            else trm { trInfo = nev } -- fortified term
+         nt  = trm { trInfo = nev } -- fortified term
      return (ngs, nt)
   where
     add nev t = t {trInfo = nev ++ trInfo t}
@@ -177,7 +176,7 @@ typings (c:cnt) t = dive (cnForm c) `mplus` typings cnt t
         comp ls (arg:rs) =
           let nt = mbNot tr; prd = predSymb tr
            in (do match t arg
-                  return $ nt prd {trArgs = reverse ls ++ (ThisT : rs)} : trInfo arg
+                  return $ nt prd {trArgs = reverse ls ++ (ThisT : rs)} : ntnEvid ls prd ++ trInfo arg
               `mplus` comp (arg:ls) rs)
 
     dive2 e@Trm {trName = "=", trArgs = [l,r]} = if twins l t
@@ -190,6 +189,9 @@ typings (c:cnt) t = dive (cnForm c) `mplus` typings cnt t
     dive2 (Exi _ f) = dive f
     dive2 (Tag _ f) = dive f
     dive2 _         = mzero
+
+    ntnEvid [] prd | isNtn prd = trInfo prd
+    ntnEvid _ _ = []
 
 
 
